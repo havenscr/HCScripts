@@ -1,0 +1,197 @@
+/*
+ * Generate time intelligence measures based
+ *
+ * Modified by: Reid Havens, https://havensconsulting.net 
+ * Original Author(s): Benoit Fedit, https://datakuity.com 
+ * Original Author(s): Bernat Agulló, www.esbrina-ba.com/blog 
+ *
+ */
+
+// Creates popup promots to select the calendar table, and date column, to then dynamically update the scripts below
+var CalendarTable = SelectTable(label: "Select your calendar table");
+if(CalendarTable == null) return;
+
+var CalendarTableDateColumn = SelectColumn(CalendarTable.Columns, label: "Select the date key column");
+if(CalendarTableDateColumn == null) return;
+string CalendarTableName = CalendarTable.Name;
+string CalendarTableDateColumnName = CalendarTableDateColumn.Name;
+
+// For each selected measure create YTY, PY, PY YTD, YOY, YOY% measures
+foreach(var m in Selected.Measures) {
+    
+    // YTD
+    m.Table.AddMeasure(
+    m.Name + " YTD",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" + 
+    "\r\n" +                                               // Carriage Return
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATESYTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] )" +
+    "\r\n" +                                               // Carriage Return
+    ")",
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // PY
+    m.Table.AddMeasure(
+    m.Name + " PY",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, YEAR )" +
+    "\r\n" +                                               // Carriage Return
+    ")",    
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // PY YTD
+    m.Table.AddMeasure(
+    m.Name + " PY YTD",                                    // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   ["+ m.Name + " YTD], " +
+    "\r\n" +                                               // Carriage Return 
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, YEAR )" +
+    "\r\n" +                                               // Carriage Return
+    ")",       
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // YoY
+    m.Table.AddMeasure(
+    m.Name + " YoY",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    m.DaxObjectName + " - [" + m.Name + " PY]",    
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    ).FormatString = "0.0 %";
+        
+    // YoY%
+    m.Table.AddMeasure(
+    m.Name + " YoY%",                                       // Name
+    "\r\n" +                                                // Carriage Return
+    "DIVIDE( [" + m.Name + " YoY], [" + m.Name + " PY] )",    
+    ".Time Intelligence\\" +  m.Name      // Display Folder
+    );
+
+    // QTD
+    m.Table.AddMeasure(
+    m.Name + " QTD",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" + 
+    "\r\n" +                                               // Carriage Return
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATESQTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] )" +
+    "\r\n" +                                               // Carriage Return
+    ")",
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // PQ
+    m.Table.AddMeasure(
+    m.Name + " PQ",                                        // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, QUARTER )" +
+    "\r\n" +                                               // Carriage Return
+    ")",    
+    ".Time Intelligence\\" +  m.Name      // Display Folder
+    );
+    
+    // PY QTD
+    m.Table.AddMeasure(
+    m.Name + " PY QTD",                                    // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   ["+ m.Name + " QTD], " +
+    "\r\n" +                                               // Carriage Return 
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, QUARTER )" +
+    "\r\n" +                                               // Carriage Return
+    ")",       
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // QoQ
+    m.Table.AddMeasure(
+    m.Name + " QoQ",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    m.DaxObjectName + " - [" + m.Name + " PQ]",    
+    ".Time Intelligence\\" +  m.Name      // Display Folder
+    ).FormatString = "0.0 %";
+        
+    // QoQ%
+    m.Table.AddMeasure(
+    m.Name + " QoQ%",                                      // Name
+    "\r\n" +                                               // Carriage Return
+    "DIVIDE( [" + m.Name + " QoQ], [" + m.Name + " PQ] )",    
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+
+    // MTD
+    m.Table.AddMeasure(
+    m.Name + " MTD",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" + 
+    "\r\n" +                                               // Carriage Return
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATESMTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] )" +
+    "\r\n" +                                               // Carriage Return
+    ")",
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // PM
+    m.Table.AddMeasure(
+    m.Name + " PM",                                        // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   " + m.DaxObjectName + "," +
+    "\r\n" +                                               // Carriage Return
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, MONTH )" +
+    "\r\n" +                                               // Carriage Return
+    ")",    
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // PY MTD
+    m.Table.AddMeasure(
+    m.Name + " PY MTD",                                    // Name
+    "\r\n" +                                               // Carriage Return
+    "CALCULATE(" +
+    "\r\n" +                                               // Carriage Return 
+    "   ["+ m.Name + " MTD], " +
+    "\r\n" +                                               // Carriage Return 
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, MONTH )" +
+    "\r\n" +                                               // Carriage Return
+    ")",       
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    );
+    
+    // MoM
+    m.Table.AddMeasure(
+    m.Name + " MoM",                                       // Name
+    "\r\n" +                                               // Carriage Return
+    m.DaxObjectName + " - [" + m.Name + " PM]",    
+    ".Time Intelligence\\" +  m.Name     // Display Folder
+    ).FormatString = "0.0 %";
+        
+    // MoM%
+    m.Table.AddMeasure(
+    m.Name + " MoM%",                                       // Name
+    "\r\n" +                                                // Carriage Return
+    "DIVIDE( [" + m.Name + " MoM], [" + m.Name + " PM] )",    
+    ".Time Intelligence\\" +  m.Name      // Display Folder
+    );
+
+}
+
