@@ -10,11 +10,32 @@
 // Creates popup promots to select the calendar table, and date column, to then dynamically update the scripts below
 var CalendarTable = SelectTable(label: "Select your calendar table");
 if(CalendarTable == null) return;
-
 var CalendarTableDateColumn = SelectColumn(CalendarTable.Columns, label: "Select the date key column");
 if(CalendarTableDateColumn == null) return;
+
+var FactTable = SelectTable(label: "Select fact table with latest record date column");
+if(FactTable == null) return;
+var FactTableDateColumn = SelectColumn(FactTable.Columns, label: "Select fact table date column for the latest records");
+if(FactTableDateColumn == null) return;
+
 string CalendarTableName = CalendarTable.Name;
 string CalendarTableDateColumnName = CalendarTableDateColumn.Name;
+
+//Strings used for Dates with Transactions Flag Column
+string FactTableName = FactTable.Name;
+string FactTableDateColumnName = FactTableDateColumn.Name;
+string dateWithSalesColumnName = "Dates With " + FactTable.Name + " Flag";
+string dateWithSalesWithTable = "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "]";
+
+// Creates has transaction flag column on the calender table
+if (!Model.Tables[CalendarTableName].Columns.Any(C => C.GetAnnotation("@AgulloBernat") == "Date with Data Column"))
+{
+    string DateWithSalesCalculatedColumnExpression =
+        "'" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] <= MAX ( '" + FactTableName + "'[" + FactTableDateColumnName + "])";
+
+    Column dateWithDataColumn = CalendarTable.AddCalculatedColumn(dateWithSalesColumnName, DateWithSalesCalculatedColumnExpression);
+    dateWithDataColumn.SetAnnotation("@AgulloBernat", "Date with Data Column");
+};
 
 // For each selected measure create YTY, PY, PY YTD, YOY, YOY% measures
 foreach(var m in Selected.Measures) {
@@ -192,6 +213,4 @@ foreach(var m in Selected.Measures) {
     "DIVIDE( [" + m.Name + " MoM], [" + m.Name + " PM] )",    
     ".Time Intelligence\\" +  m.Name      // Display Folder
     );
-
 }
-
