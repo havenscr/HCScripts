@@ -37,6 +37,9 @@ if (!Model.Tables[CalendarTableName].Columns.Any(C => C.GetAnnotation("@AgulloBe
     dateWithDataColumn.SetAnnotation("@AgulloBernat", "Date with Data Column");
 };
 
+// Creates input box for fiscal year end date
+var FiscalYearEndDate = Microsoft.VisualBasic.Interaction.InputBox("Provide your fiscal year end date. E.g. 6/30/2024", "Fiscal Year End Date", "6/30/2024", 0, 0);
+
 // For each selected measure create YTY, PY, PY YTD, YOY, YOY% measures
 foreach(var m in Selected.Measures) {
     
@@ -74,8 +77,7 @@ foreach(var m in Selected.Measures) {
     m.Table.AddMeasure(
     m.Name + " YoY", // Name
     "VAR CY = " + m.DaxObjectName + "VAR PY = " + "[" + m.Name + " PY] " +
-    "VAR Result = " + "IF( AND( " + m.DaxObjectName + ", " + "[" + m.Name + " PY]), " + 
-    m.DaxObjectName + " - [" + m.Name + " PY]) " +
+    "VAR Result = " + "IF( AND( CY, PY ), CY - PY )" +
     "RETURN Result",
     ".Time Intelligence\\" +  m.Name // Display Folder
     ).FormatString = "0.0 %";
@@ -87,6 +89,110 @@ foreach(var m in Selected.Measures) {
     ".Time Intelligence\\" +  m.Name // Display Folder
     );
 
+    // QTD
+    m.Table.AddMeasure(
+    m.Name + " QTD", // Name
+    "CALCULATE( "
+    + m.DaxObjectName + "," +
+    " DATESQTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+    
+    // PQ
+    m.Table.AddMeasure(
+    m.Name + " PQ", // Name
+    "CALCULATE(" +
+    "   " + m.DaxObjectName + "," +
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, QUARTER ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+    
+    // PY QTD
+    m.Table.AddMeasure(
+    m.Name + " PY QTD", // Name
+    "CALCULATE(" +
+    " ["+ m.Name + " QTD], " +
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, QUARTER ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+    
+    
+    // QoQ
+    m.Table.AddMeasure(
+    m.Name + " QoQ", // Name
+    "VAR CQ = " + m.DaxObjectName + "VAR PQ = " + "[" + m.Name + " PQ] " +
+    "VAR Result = " + "IF( AND( CQ, PQ ), CQ - PQ )" +
+    "RETURN Result",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    ).FormatString = "0.0 %";
+        
+    // QoQ%
+    m.Table.AddMeasure(
+    m.Name + " QoQ%", // Name
+    "DIVIDE( [" + m.Name + " QoQ], [" + m.Name + " PQ] )",    
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+
+    // MTD
+    m.Table.AddMeasure(
+    m.Name + " MTD", // Name
+    "CALCULATE( "
+    + m.DaxObjectName + "," +
+    " DATESMTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "] ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name  // Display Folder
+    );
+    
+    // PM
+    m.Table.AddMeasure(
+    m.Name + " PM", // Name
+    "CALCULATE(" +
+    "   " + m.DaxObjectName + "," +
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, MONTH ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+    
+    // PY MTD
+    m.Table.AddMeasure(
+    m.Name + " PY MTD", // Name
+    "CALCULATE(" +
+    " ["+ m.Name + " MTD], " +
+    "   DATEADD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], -1, MONTH ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+    
+    
+    // MoM
+    m.Table.AddMeasure(
+    m.Name + " MoM", // Name
+    "VAR CM = " + m.DaxObjectName + "VAR PM = " + "[" + m.Name + " PM] " +
+    "VAR Result = " + "IF( AND( CM, PM ), CM - PM )" +
+    "RETURN Result",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    ).FormatString = "0.0 %";
+        
+    // MoM%
+    m.Table.AddMeasure(
+    m.Name + " MoM%", // Name
+    "DIVIDE( [" + m.Name + " MoM], [" + m.Name + " PM] )",    
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+
+    // FYTD
+    m.Table.AddMeasure(
+    m.Name + " FYTD", // Name
+    "CALCULATE( "
+    + m.DaxObjectName + "," +
+    " DATESYTD( '" + CalendarTableName + "'[" + CalendarTableDateColumnName + "], " + @"""" + FiscalYearEndDate + @"""" + " ), " +
+    "'" + CalendarTableName + "'[" + dateWithSalesColumnName + "] = TRUE() )",
+    ".Time Intelligence\\" +  m.Name // Display Folder
+    );
+}
 
 //Format All Measures
 foreach (var m in Model.AllMeasures)
